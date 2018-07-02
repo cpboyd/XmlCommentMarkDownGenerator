@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
@@ -153,7 +154,7 @@ namespace PxtlCa.XmlCommentMarkDownGenerator
 
 
             if (node.NodeType == XmlNodeType.Text)
-                return Regex.Replace(((XText)node).Value.Replace('\n', ' '), @"\s+", " ");
+                return WebUtility.HtmlEncode(Regex.Replace(((XText)node).Value.Replace('\n', ' '), @"\s+", " "));
 
             return "";
         }
