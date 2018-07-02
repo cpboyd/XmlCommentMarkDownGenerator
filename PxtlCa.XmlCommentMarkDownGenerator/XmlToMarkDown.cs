@@ -60,6 +60,32 @@ namespace PxtlCa.XmlCommentMarkDownGenerator
         }
 
         /// <summary>
+        /// Convert header text to a MSDN link.
+        /// </summary>
+        /// <param name="header">The header to reference.</param>
+        /// <returns>The corrected MSDN link.</returns>
+        public static string ToMsdnLink(this string header)
+        {
+            // Remove any characters disallowed for use in an anchor fragment, as well as parentheses and '.'
+            Regex pattern = new Regex(@"((^(([A-Z]\:)|(\w+\s)))|(\(.+\)))");
+            return "https://msdn.microsoft.com/en-us/library/" + pattern.Replace(header, "");
+        }
+
+        /// <summary>
+        /// Convert header text to a link.
+        /// </summary>
+        /// <param name="header">The header to reference.</param>
+        /// <returns>The corrected link.</returns>
+        public static string ToLink(this string header)
+        {
+            // Check to see if we should link to MSDN:
+            // FIXME: Currently only checks for System namespace AFTER the assembly namespace is removed.
+            //        This could result in false positives, if the assembly has a System sub-namespace.
+            Regex isMsdn = new Regex(@"^(([A-Z]\:)|(\w+\s))System\.");
+            return isMsdn.IsMatch(header) ? ToMsdnLink(header) : ToAnchor(header);
+        }
+
+        /// <summary>
         /// Write out the given XML Node as Markdown. Recursive function used internally.
         /// </summary>
         /// <param name="node">The xml node to write out.</param>

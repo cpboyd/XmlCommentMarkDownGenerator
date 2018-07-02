@@ -128,13 +128,18 @@ namespace PxtlCa.XmlCommentMarkDownGenerator
                     {
                         xx[1] = xx[0];
                     }
-                    xx[0] = xx[0].ToAnchor();
+                    xx[0] = xx[0].ToLink();
                     return xx;
                 }
             ),
             ["seeAnchor"] = new TagRenderer(
                 "[{1}]({0})",
-                (x, context) => { var xx = XmlToMarkdown.ExtractNameAndBody("cref", x, context); xx[0] = xx[0].ToAnchor(); return xx; }
+                (x, context) =>
+                {
+                    var xx = XmlToMarkdown.ExtractNameAndBody("cref", x, context);
+                    xx[0] = xx[0].ToLink();
+                    return xx;
+                }
             ),
             ["seePage"] = new TagRenderer(
                 "[{1}]({0})",
@@ -145,7 +150,7 @@ namespace PxtlCa.XmlCommentMarkDownGenerator
                     {
                         xx[1] = xx[0];
                     }
-                    xx[0] = xx[0].ToAnchor();
+                    xx[0] = xx[0].ToLink();
                     return xx;
                 }
             ),
