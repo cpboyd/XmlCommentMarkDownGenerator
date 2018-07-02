@@ -34,13 +34,30 @@ namespace PxtlCa.XmlCommentMarkDownGenerator
                 .RemoveRedundantLineBreaks();
         }
 
-        private static Dictionary<string, string> _MemberNamePrefixDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
+        // Handle types from https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/xmldoc/processing-the-xml-file
+        private static Dictionary<string, string> _MemberNamePrefixDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["N:"] = "Namespace",
+            ["T:"] = "Type",
             ["F:"] = "Field",
             ["P:"] = "Property",
-            ["T:"] = "Type",
-            ["E:"] = "Event",
             ["M:"] = "Method",
+            ["E:"] = "Event",
+            ["!:"] = "Error",
         };
+
+        /// <summary>
+        /// Convert header text to an anchor link.
+        /// </summary>
+        /// <param name="anchor">The header to reference.</param>
+        /// <returns>The corrected anchor link.</returns>
+        public static string ToAnchor(this string anchor)
+        {
+            // Remove any characters disallowed for use in an anchor fragment, as well as parentheses and '.'
+            Regex pattern = new Regex(@"[""#%<>[\\\]^`{|}().]");
+            // Replace spaces with '-'
+            return "#" + pattern.Replace(anchor, "").Replace(' ', '-').ToLowerInvariant();
+        }
 
         /// <summary>
         /// Write out the given XML Node as Markdown. Recursive function used internally.
@@ -67,7 +84,7 @@ namespace PxtlCa.XmlCommentMarkDownGenerator
                     {
                         expandedName = "none";
                     }
-                    name = expandedName.ToLowerInvariant();
+                    //name = expandedName.ToLowerInvariant();
                 }
                 if (name == "see")
                 {
@@ -117,9 +134,18 @@ namespace PxtlCa.XmlCommentMarkDownGenerator
 
         private static readonly Regex _PrefixReplacerRegex = new Regex(@"(^[A-Z]\:)");
 
-        internal static string[] ExtractNameAndBodyFromMember(XElement node, ConversionContext context)
+        internal static string[] ExtractNameAndBodyFromMember(string att, XElement node, ConversionContext context)
         {
-            var newName = Regex.Replace(node.Attribute("name").Value, $@":{Regex.Escape(context.AssemblyName)}\.", ":"); //remove leading namespace if it matches the assembly name
+            var name = node.Attribute(att)?.Value;
+            if (name == null)
+            {
+                return new[]
+                   {
+                    null,
+                    node.Nodes().ToMarkDown(context)
+                };
+            }
+            var newName = Regex.Replace(name, $@":{Regex.Escape(context.AssemblyName)}\.", ":"); //remove leading namespace if it matches the assembly name
             //TODO: do same for function parameters
             newName = _PrefixReplacerRegex.Replace(newName, match => _MemberNamePrefixDict[match.Value] + " "); //expand prefixes into more verbose words for member.
             return new[]
@@ -127,6 +153,11 @@ namespace PxtlCa.XmlCommentMarkDownGenerator
                     newName,
                     node.Nodes().ToMarkDown(context)
                 };
+        }
+
+        internal static string[] ExtractNameAndBodyFromMember(XElement node, ConversionContext context)
+        {
+            return ExtractNameAndBodyFromMember("name", node, context);
         }
 
         internal static string[] ExtractNameAndBody(string att, XElement node, ConversionContext context)
